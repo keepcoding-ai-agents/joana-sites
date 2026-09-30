@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogos da Ana</title>
+<style>
+  :root{
+    --blue:#1f74e0; --blue-800:#0f3d80; --ink:#0b2246; --gold:#c8973f; --gold-soft:#f3e6c9;
+    --p-atencao:#f2a31c; --p-memoria:#e8567f; --p-executiva:#7c5ce0; --p-linguagem:#17a5b0;
+    --p-matematica:#2fb56b; --p-percepcao:#f0563f;
+    --bg:#fdf9f2; --bg-2:#eef4fc; --card:#ffffff; --line:#e6e1d3;
+    --font-display: 'Baloo 2','Fredoka',system-ui,-apple-system,sans-serif;
+    --font-body: 'Nunito',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font-body);
+    background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);
+    color:var(--ink);
+    min-height:100vh;
+    padding:24px 16px 56px;
+  }
+  #app{max-width:920px;margin:0 auto}
+  h1,h2,h3{font-family:var(--font-display);margin:0}
+  button{font-family:var(--font-body);cursor:pointer;border:none}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:0 6px 20px rgba(11,34,70,.06);
+  }
+  /* ---------- topo / mascote ---------- */
+  .topo{display:flex;align-items:center;gap:18px;padding:20px 22px;margin-bottom:22px}
+  .balao{
+    position:relative;
+    background:var(--card);
+    border:2px solid var(--blue);
+    border-radius:18px;
+    padding:14px 18px;
+    flex:1;
+  }
+  .balao:before{
+    content:"";
+    position:absolute;left:-14px;top:26px;
+    border:9px solid transparent;
+    border-right-color:var(--blue);
+  }
+  .balao:after{
+    content:"";
+    position:absolute;left:-10px;top:26px;
+    border:8px solid transparent;
+    border-right-color:var(--card);
+  }
+  .balao h1{font-size:1.25rem;color:var(--blue-800)}
+  .balao p{margin:4px 0 0;color:#5b6b85;font-size:.95rem}
+  .mascote{flex-shrink:0;filter:drop-shadow(0 6px 10px rgba(200,151,63,.25))}
+
+  /* ---------- menu de jogos ---------- */
+  .grade{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:560px){.grade{grid-template-columns:1fr}}
+  .jogo-btn{
+    display:flex;align-items:center;gap:14px;
+    text-align:left;
+    padding:18px;border-radius:18px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:7px solid var(--cor,var(--blue));
+    box-shadow:0 6px 16px rgba(11,34,70,.06);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .jogo-btn:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(11,34,70,.12)}
+  .jogo-icone{
+    width:52px;height:52px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb, var(--cor,var(--blue)) 14%, white);
+    flex-shrink:0;
+  }
+  .jogo-nome{font-family:var(--font-display);font-size:1.05rem;color:var(--ink)}
+  .jogo-desc{font-size:.85rem;color:#6b7690;margin-top:2px}
+
+  /* ---------- tela de jogo ---------- */
+  .tela-jogo{padding:22px}
+  .voltar{
+    background:none;color:var(--blue-800);font-weight:700;
+    padding:8px 4px;margin-bottom:10px;font-size:.95rem;
+  }
+  .titulo-jogo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .titulo-jogo .badge{
+    width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb, var(--cor,var(--blue)) 16%, white);
+  }
+  .progresso{display:flex;gap:6px;margin:14px 0 22px}
+  .pt{width:10px;height:10px;border-radius:50%;background:var(--line)}
+  .pt.feito{background:var(--cor,var(--blue))}
+  .pt.atual{background:var(--cor,var(--blue));box-shadow:0 0 0 4px color-mix(in srgb, var(--cor,var(--blue)) 25%, white)}
+
+  .pergunta{
+    background:var(--bg-2);
+    border-radius:16px;
+    padding:22px;
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .palavra-grande{
+    font-family:var(--font-display);
+    font-size:2rem;letter-spacing:.03em;color:var(--ink);
+  }
+  .enunciado{font-size:1.05rem;line-height:1.5;color:var(--ink)}
+
+  .opcoes{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:6px}
+  .opcao-btn{
+    padding:14px 22px;border-radius:14px;
+    background:var(--card);border:2px solid var(--line);
+    font-family:var(--font-display);font-size:1.1rem;color:var(--ink);
+    transition:transform .1s ease, border-color .15s ease;
+  }
+  .opcao-btn:hover{transform:translateY(-2px);border-color:var(--cor,var(--blue))}
+  .opcao-btn:active{transform:translateY(0) scale(.97)}
+  .opcao-btn.certa{border-color:var(--p-matematica);background:color-mix(in srgb, var(--p-matematica) 14%, white)}
+  .opcao-btn.errada{border-color:var(--p-percepcao);background:color-mix(in srgb, var(--p-percepcao) 14%, white)}
+  .opcao-btn:disabled{cursor:default}
+
+  .feedback{
+    margin-top:16px;border-radius:14px;padding:14px 18px;
+    display:flex;align-items:center;gap:12px;
+    animation:pop .25s ease;
+  }
+  .feedback.ok{background:color-mix(in srgb, var(--p-matematica) 15%, white);color:#175c3a}
+  .feedback.nok{background:color-mix(in srgb, var(--p-percepcao) 14%, white);color:#8a2f1c}
+  .feedback .emoji{font-size:1.6rem}
+  .continuar{
+    margin-top:14px;padding:12px 24px;border-radius:12px;
+    background:var(--blue);color:white;font-family:var(--font-display);font-size:1rem;
+  }
+  .continuar:hover{background:var(--blue-800)}
+
+  /* ---------- memória ---------- */
+  .grade-memoria{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:480px;margin:0 auto}
+  @media (max-width:480px){.grade-memoria{grid-template-columns:repeat(4,1fr);gap:7px}}
+  .carta{
+    aspect-ratio:3/4;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--blue);color:white;font-family:var(--font-display);
+    font-size:.85rem;text-align:center;padding:4px;
+    cursor:pointer;transition:transform .2s ease;
+    box-shadow:0 4px 10px rgba(11,34,70,.15);
+  }
+  .carta.virada{background:var(--card);color:var(--ink);border:2px solid var(--p-memoria)}
+  .carta.encontrada{background:color-mix(in srgb, var(--p-matematica) 18%, white);color:#175c3a;border:2px solid var(--p-matematica)}
+
+  /* ---------- gavetas ---------- */
+  .item-atual{
+    background:var(--bg-2);border-radius:16px;padding:20px;text-align:center;
+    font-family:var(--font-display);font-size:1.2rem;margin-bottom:18px;
+  }
+  .gavetas{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:560px){.gavetas{grid-template-columns:1fr}}
+  .gaveta-btn{
+    padding:16px 10px;border-radius:14px;border:2px solid var(--line);
+    background:var(--card);font-family:var(--font-display);font-size:.95rem;
+    text-align:center;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  }
+  .gaveta-btn:hover{border-color:var(--p-executiva);transform:translateY(-2px)}
+  .gaveta-conteudo{font-size:.72rem;color:#6b7690;font-family:var(--font-body);font-weight:400;line-height:1.3}
+
+  /* ---------- final ---------- */
+  .final{text-align:center;padding:32px 20px}
+  .estrelas{font-size:2.4rem;margin:10px 0;letter-spacing:.15em}
+  .acoes-final{display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  .btn-secundario{padding:12px 22px;border-radius:12px;background:var(--bg-2);color:var(--ink);font-family:var(--font-display)}
+  .btn-secundario:hover{background:var(--line)}
+
+  footer{text-align:center;color:#8b95ab;font-size:.8rem;margin-top:34px}
+
+  @media (prefers-reduced-motion: no-preference){
+    .card, .jogo-btn, .opcao-btn, .carta, .continuar{will-change:transform}
+    @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .tela-jogo{animation:fade .25s ease}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ===================== dados dos jogos ===================== */
+
+const CORREIO_DATA = [
+  {antes:'', letra:'J', depois:'ANELA', opcoes:['J','G'], certa:'J'},
+  {antes:'', letra:'G', depois:'ATO', opcoes:['J','G'], certa:'G'},
+  {antes:'', letra:'J', depois:'ACARÉ', opcoes:['J','G'], certa:'J'},
+  {antes:'', letra:'G', depois:'ARRAFA', opcoes:['J','G'], certa:'G'},
+  {antes:'CA', letra:'S', depois:'A', opcoes:['S','Z'], certa:'S'},
+  {antes:'BU', letra:'Z', depois:'INA', opcoes:['S','Z'], certa:'Z'},
+  {antes:'VA', letra:'S', depois:'O', opcoes:['S','Z'], certa:'S'},
+  {antes:'', letra:'Z', depois:'EBRA', opcoes:['S','Z'], certa:'Z'},
+  {antes:'CA', letra:'M', depois:'PO', opcoes:['M','N'], certa:'M'},
+  {antes:'BANA', letra:'N', depois:'A', opcoes:['M','N'], certa:'N'},
+  {antes:'TA', letra:'M', depois:'BOR', opcoes:['M','N'], certa:'M'},
+  {antes:'CA', letra:'N', depois:'ETA', opcoes:['M','N'], certa:'N'},
+];
+
+const DETETIVE_LETRAS_DATA = [
+  {errada:'CAVALLO', certa:'CAVALO', opcoes:['CAVALO','CAVALLO','CAVOLO']},
+  {errada:'BORBOETA', certa:'BORBOLETA', opcoes:['BORBOLETA','BORBOETA','BORBOLLETA']},
+  {errada:'JACARÉÉ', certa:'JACARÉ', opcoes:['JACARÉ','JACARÉÉ','JACRÉ']},
+  {errada:'ESCLA', certa:'ESCOLA', opcoes:['ESCOLA','ESCLA','ESCOOLA']},
+  {errada:'GIRRAFA', certa:'GIRAFA', opcoes:['GIRAFA','GIRRAFA','GIRAFAA']},
+];
+
+const MEMORIA_PALAVRAS = ['HOJE','HOTEL','HOMEM','HOSPITAL'];
+
+const GAVETAS_ITENS = [
+  'Prova de amanhã','Brinquedo quebrado','Casaco de frio',
+  'Bilhete da escola','Papel de bala','Livro emprestado'
+];
+const GAVETAS_CATEGORIAS = ['Uso amanhã','Guardar em casa','Jogar fora'];
+
+const ENUNCIADO_DATA = [
+  {texto:'Ana tinha 5 figurinhas e ganhou mais 3. Quantas ela tem agora?', certa:'+'},
+  {texto:'Tinha 10 balas e comeu 4. Quantas sobraram?', certa:'−'},
+  {texto:'Cada caixa tem 4 lápis. São 3 caixas. Quantos lápis ao todo?', certa:'×'},
+  {texto:'12 balas para dividir igualmente entre 4 amigos. Quantas cada um recebe?', certa:'÷'},
+];
+
+const JOGOS = [
+  {id:'correio', nome:'Correio das Trocas', desc:'J, G, S, Z, M, N — escolha a caixa certa', cor:'var(--p-linguagem)', icone:'correio'},
+  {id:'letras', nome:'Detetive das Letras', desc:'Ache a palavra certinha', cor:'var(--p-percepcao)', icone:'lupa'},
+  {id:'memoria', nome:'Memória do H', desc:'Encontre os pares', cor:'var(--p-memoria)', icone:'cartas'},
+  {id:'gavetas', nome:'Caixa de 3 Gavetas', desc:'Cada coisa no seu lugar', cor:'var(--p-executiva)', icone:'gaveta'},
+  {id:'enunciado', nome:'Detetive do Enunciado', desc:'Descubra a conta certa', cor:'var(--p-matematica)', icone:'numeros'},
+];
+
+/* ===================== ilustrações (SVG) ===================== */
+
+function svgOwl(w){
+  w = w || 110;
+  return '<svg width="'+w+'" height="'+w+'" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+    + '<ellipse cx="60" cy="70" rx="42" ry="44" fill="#c8973f"/>'
+    + '<ellipse cx="60" cy="72" rx="33" ry="35" fill="#fff8ea"/>'
+    + '<path d="M26 42 Q34 8 50 28" stroke="#1f74e0" stroke-width="7" stroke-linecap="round" fill="none"/>'
+    + '<path d="M94 42 Q86 8 70 28" stroke="#1f74e0" stroke-width="7" stroke-linecap="round" fill="none"/>'
+    + '<circle cx="45" cy="64" r="17" fill="#ffffff" stroke="#1f74e0" stroke-width="4"/>'
+    + '<circle cx="75" cy="64" r="17" fill="#ffffff" stroke="#1f74e0" stroke-width="4"/>'
+    + '<circle cx="45" cy="64" r="6.5" fill="#0b2246"/>'
+    + '<circle cx="75" cy="64" r="6.5" fill="#0b2246"/>'
+    + '<path d="M55 76 L60 85 L65 76 Z" fill="#e8567f"/>'
+    + '<ellipse cx="60" cy="104" rx="20" ry="8" fill="#e2a23f"/>'
+    + '<path d="M16 92 Q28 112 46 100" stroke="#c8973f" stroke-width="9" stroke-linecap="round" fill="none"/>'
+    + '<path d="M104 92 Q92 112 74 100" stroke="#c8973f" stroke-width="9" stroke-linecap="round" fill="none"/>'
+    + '</svg>';
+}
+
+function svgIcon(nome, cor){
+  const partes = {
+    correio: '<path d="M6 10h28v18a3 3 0 01-3 3H9a3 3 0 01-3-3V10z" fill="'+cor+'" opacity="0.15"/><path d="M6 10l14 10 14-10" stroke="'+cor+'" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="10" width="28" height="21" rx="3" stroke="'+cor+'" stroke-width="2.5" fill="none"/>',
+    lupa: '<circle cx="17" cy="17" r="11" stroke="'+cor+'" stroke-width="3" fill="none"/><line x1="25" y1="25" x2="34" y2="34" stroke="'+cor+'" stroke-width="3" stroke-linecap="round"/>',
+    cartas: '<rect x="5" y="9" width="14" height="20" rx="3" stroke="'+cor+'" stroke-width="2.5" fill="none"/><rect x="21" y="9" width="14" height="20" rx="3" stroke="'+cor+'" stroke-width="2.5" fill="'+cor+'" fill-opacity="0.18"/>',
+    gaveta: '<rect x="6" y="7" width="28" height="26" rx="4" stroke="'+cor+'" stroke-width="2.5" fill="none"/><line x1="6" y1="18" x2="34" y2="18" stroke="'+cor+'" stroke-width="2.5"/><line x1="16" y1="24.5" x2="24" y2="24.5" stroke="'+cor+'" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="12.5" x2="24" y2="12.5" stroke="'+cor+'" stroke-width="2.5" stroke-linecap="round"/>',
+    numeros: '<circle cx="16" cy="16" r="11" stroke="'+cor+'" stroke-width="3" fill="none"/><line x1="24" y1="24" x2="33" y2="33" stroke="'+cor+'" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="16" x2="22" y2="16" stroke="'+cor+'" stroke-width="2.5" stroke-linecap="round"/><line x1="16" y1="10" x2="16" y2="22" stroke="'+cor+'" stroke-width="2.5" stroke-linecap="round"/>',
+  };
+  return '<svg width="34" height="34" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">'+(partes[nome]||'')+'</svg>';
+}
+
+/* ===================== utilidades ===================== */
+
+function embaralhar(lista){
+  const a = lista.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    const t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+
+function estrelasPorAcerto(acertos,total){
+  const p = acertos/total;
+  if(p>=0.85) return '⭐⭐⭐';
+  if(p>=0.5) return '⭐⭐';
+  return '⭐';
+}
+
+/* ===================== estado ===================== */
+
+let state = { tela:'menu' };
+
+function root(){ return document.getElementById('app'); }
+function render(){ root().innerHTML = telaAtual(); }
+
+function irParaMenu(){
+  state = { tela:'menu' };
+  render();
+}
+
+function escolherJogo(id){
+  if(id==='correio'){
+    state = { tela:'correio', ordem: embaralhar(CORREIO_DATA), passo:0, acertos:0, resposta:null };
+  } else if(id==='letras'){
+    state = { tela:'letras', ordem: embaralhar(DETETIVE_LETRAS_DATA), passo:0, acertos:0, resposta:null };
+  } else if(id==='memoria'){
+    iniciarMemoria();
+  } else if(id==='gavetas'){
+    state = { tela:'gavetas', ordem: embaralhar(GAVETAS_ITENS), passo:0, ultimaEscolha:null };
+  } else if(id==='enunciado'){
+    state = { tela:'enunciado', ordem: embaralhar(ENUNCIADO_DATA), passo:0, acertos:0, resposta:null };
+  }
+  render();
+}
+
+/* ===================== telas ===================== */
+
+function telaAtual(){
+  switch(state.tela){
+    case 'menu': return telaMenu();
+    case 'correio': return telaCorreio();
+    case 'letras': return telaLetras();
+    case 'memoria': return telaMemoria();
+    case 'gavetas': return telaGavetas();
+    case 'enunciado': return telaEnunciado();
+    default: return telaMenu();
+  }
+}
+
+function cabecalho(){
+  return '<div class="card topo">'
+    + '<div class="mascote">'+svgOwl(96)+'</div>'
+    + '<div class="balao"><h1>Oi, Ana!</h1><p>Qual jogo você quer jogar hoje?</p></div>'
+    + '</div>';
+}
+
+function telaMenu(){
+  let html = cabecalho();
+  html += '<div class="grade">';
+  JOGOS.forEach(function(j){
+    html += '<button class="jogo-btn" style="--cor:'+j.cor+'" onclick="escolherJogo(\''+j.id+'\')">'
+      + '<span class="jogo-icone">'+svgIcon(j.icone, j.cor)+'</span>'
+      + '<span><span class="jogo-nome">'+j.nome+'</span><br><span class="jogo-desc">'+j.desc+'</span></span>'
+      + '</button>';
+  });
+  html += '</div>';
+  html += '<footer>Feito com carinho pra Ana · jogos de treino, não substituem acompanhamento profissional</footer>';
+  return html;
+}
+
+function barraProgresso(passo,total,cor){
+  let pts='';
+  for(let i=0;i<total;i++){
+    let cls='pt'; if(i<passo) cls+=' feito'; else if(i===passo) cls+=' atual';
+    pts += '<span class="'+cls+'" style="--cor:'+cor+'"></span>';
+  }
+  return '<div class="progresso">'+pts+'</div>';
+}
+
+function botaoVoltar(){
+  return '<button class="voltar" onclick="irParaMenu()">← Voltar ao mapa</button>';
+}
+
+/* ---------- Correio das Trocas ---------- */
+
+function telaCorreio(){
+  const cor = 'var(--p-linguagem)';
+  if(state.passo >= state.ordem.length){
+    return telaFinal(state.acertos, state.ordem.length, cor, function(){ escolherJogo('correio'); });
+  }
+  const item = state.ordem[state.passo];
+  const palavra = item.antes + '_' + item.depois;
+  let html = '<div class="tela-jogo card">';
+  html += botaoVoltar();
+  html += '<div class="titulo-jogo"><span class="badge" style="--cor:'+cor+'">'+svgIcon('correio',cor)+'</span><h2>Correio das Trocas</h2></div>';
+  html += barraProgresso(state.passo, state.ordem.length, cor);
+  html += '<div class="pergunta"><div class="palavra-grande">'+palavra+'</div><p style="color:#6b7690;margin-top:8px">Qual letra completa a palavra certinha?</p></div>';
+  html += '<div class="opcoes">';
+  item.opcoes.forEach(function(op){
+    let cls='opcao-btn';
+    if(state.resposta){
+      if(op===item.certa) cls+=' certa';
+      else if(op===state.resposta && op!==item.certa) cls+=' errada';
+    }
+    html += '<button class="'+cls+'" style="--cor:'+cor+'" '+(state.resposta?'disabled':'')+' onclick="responderCorreio(\''+op+'\')">'+op+'</button>';
+  });
+  html += '</div>';
+  if(state.resposta){
+    const ok = state.resposta===item.certa;
+    html += '<div class="feedback '+(ok?'ok':'nok')+'"><span class="emoji">'+(ok?'🎉':'🤔')+'</span><span>'+(ok?'Isso mesmo! A palavra é '+item.antes+item.certa+item.depois+'.':'Quase — a certa é '+item.certa+'. A palavra é '+item.antes+item.certa+item.depois+'.')+'</span></div>';
+    html += '<button class="continuar" onclick="proximoCorreio()">Próxima →</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function responderCorreio(op){
+  if(state.resposta) return;
+  state.resposta = op;
+  if(op===state.ordem[state.passo].certa) state.acertos++;
+  render();
+}
+function proximoCorreio(){
+  state.passo++; state.resposta=null; render();
+}
+
+/* ---------- Detetive das Letras ---------- */
+
+function telaLetras(){
+  const cor = 'var(--p-percepcao)';
+  if(state.passo >= state.ordem.length){
+    return telaFinal(state.acertos, state.ordem.length, cor, function(){ escolherJogo('letras'); });
+  }
+  const item = state.ordem[state.passo];
+  const opcoesEmbaralhadas = state._opcoes && state._opcoesPasso===state.passo ? state._opcoes : (function(){
+    state._opcoes = embaralhar(item.opcoes); state._opcoesPasso = state.passo; return state._opcoes;
+  })();
+  let html = '<div class="tela-jogo card">';
+  html += botaoVoltar();
+  html += '<div class="titulo-jogo"><span class="badge" style="--cor:'+cor+'">'+svgIcon('lupa',cor)+'</span><h2>Detetive das Letras</h2></div>';
+  html += barraProgresso(state.passo, state.ordem.length, cor);
+  html += '<div class="pergunta"><div class="palavra-grande">'+item.errada+'</div><p style="color:#6b7690;margin-top:8px">Essa palavra tem um probleminha. Qual é a forma certinha?</p></div>';
+  html += '<div class="opcoes">';
+  opcoesEmbaralhadas.forEach(function(op){
+    let cls='opcao-btn';
+    if(state.resposta){
+      if(op===item.certa) cls+=' certa';
+      else if(op===state.resposta && op!==item.certa) cls+=' errada';
+    }
+    html += '<button class="'+cls+'" style="--cor:'+cor+'" '+(state.resposta?'disabled':'')+' onclick="responderLetras(\''+op+'\')">'+op+'</button>';
+  });
+  html += '</div>';
+  if(state.resposta){
+    const ok = state.resposta===item.certa;
+    html += '<div class="feedback '+(ok?'ok':'nok')+'"><span class="emoji">'+(ok?'🎉':'🤔')+'</span><span>'+(ok?'Isso mesmo!':'A forma certinha é '+item.certa+'.')+'</span></div>';
+    html += '<button class="continuar" onclick="proximoLetras()">Próxima →</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function responderLetras(op){
+  if(state.resposta) return;
+  state.resposta = op;
+  if(op===state.ordem[state.passo].certa) state.acertos++;
+  render();
+}
+function proximoLetras(){
+  state.passo++; state.resposta=null; state._opcoes=null; render();
+}
+
+/* ---------- Memória do H ---------- */
+
+function iniciarMemoria(){
+  const pares = MEMORIA_PALAVRAS.concat(MEMORIA_PALAVRAS).map(function(p,i){ return {id:i, palavra:p}; });
+  state = { tela:'memoria', cartas: embaralhar(pares), viradas:[], encontradas:[], travado:false };
+}
+
+function telaMemoria(){
+  const cor = 'var(--p-memoria)';
+  const todasEncontradas = state.encontradas.length === state.cartas.length;
+  let html = '<div class="tela-jogo card">';
+  html += botaoVoltar();
+  html += '<div class="titulo-jogo"><span class="badge" style="--cor:'+cor+'">'+svgIcon('cartas',cor)+'</span><h2>Memória do H</h2></div>';
+  if(todasEncontradas){
+    html += telaFinalConteudo(state.cartas.length/2, state.cartas.length/2, cor, 'iniciarMemoria()');
+  } else {
+    html += '<p style="color:#6b7690;margin:6px 0 16px">Vire duas cartas e ache as palavras iguais — todas têm o H que não se ouve.</p>';
+    html += '<div class="grade-memoria">';
+    state.cartas.forEach(function(c,i){
+      const virada = state.viradas.indexOf(i)>-1;
+      const encontrada = state.encontradas.indexOf(i)>-1;
+      let cls='carta'; if(encontrada) cls+=' encontrada'; else if(virada) cls+=' virada';
+      html += '<div class="'+cls+'" onclick="virarCarta('+i+')">'+((virada||encontrada)?c.palavra:'?')+'</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function virarCarta(i){
+  if(state.travado) return;
+  if(state.viradas.indexOf(i)>-1 || state.encontradas.indexOf(i)>-1) return;
+  if(state.viradas.length===2) return;
+  state.viradas.push(i);
+  render();
+  if(state.viradas.length===2){
+    const [a,b] = state.viradas;
+    if(state.cartas[a].palavra === state.cartas[b].palavra){
+      state.encontradas = state.encontradas.concat([a,b]);
+      state.viradas = [];
+      render();
+    } else {
+      state.travado = true;
+      setTimeout(function(){
+        state.viradas = [];
+        state.travado = false;
+        render();
+      }, 900);
+    }
+  }
+}
+
+/* ---------- Caixa de 3 Gavetas ---------- */
+
+function telaGavetas(){
+  const cor = 'var(--p-executiva)';
+  if(state.passo >= state.ordem.length){
+    let html = '<div class="tela-jogo card">';
+    html += botaoVoltar();
+    html += '<div class="final">'+svgOwl(90)+'<h2 style="margin-top:10px">Tudo organizado, Ana! 🎉</h2><p style="color:#6b7690">Cada coisa encontrou o seu lugar certinho.</p>';
+    html += '<div class="acoes-final"><button class="continuar" onclick="escolherJogo(\'gavetas\')">Jogar de novo</button><button class="btn-secundario" onclick="irParaMenu()">Voltar ao mapa</button></div></div></div>';
+    return html;
+  }
+  const item = state.ordem[state.passo];
+  let html = '<div class="tela-jogo card">';
+  html += botaoVoltar();
+  html += '<div class="titulo-jogo"><span class="badge" style="--cor:'+cor+'">'+svgIcon('gaveta',cor)+'</span><h2>Caixa de 3 Gavetas</h2></div>';
+  html += barraProgresso(state.passo, state.ordem.length, cor);
+  html += '<div class="item-atual">'+item+'</div>';
+  if(!state.ultimaEscolha){
+    html += '<div class="gavetas">';
+    GAVETAS_CATEGORIAS.forEach(function(cat){
+      html += '<button class="gaveta-btn" onclick="escolherGaveta(\''+cat+'\')">'+cat+'</button>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="feedback ok"><span class="emoji">✅</span><span>"'+item+'" foi pra gaveta '+state.ultimaEscolha+'.</span></div>';
+    html += '<button class="continuar" onclick="proximoGavetas()">Próxima →</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function escolherGaveta(cat){
+  state.ultimaEscolha = cat;
+  render();
+}
+function proximoGavetas(){
+  state.passo++; state.ultimaEscolha=null; render();
+}
+
+/* ---------- Detetive do Enunciado ---------- */
+
+function telaEnunciado(){
+  const cor = 'var(--p-matematica)';
+  if(state.passo >= state.ordem.length){
+    return telaFinal(state.acertos, state.ordem.length, cor, function(){ escolherJogo('enunciado'); });
+  }
+  const item = state.ordem[state.passo];
+  let html = '<div class="tela-jogo card">';
+  html += botaoVoltar();
+  html += '<div class="titulo-jogo"><span class="badge" style="--cor:'+cor+'">'+svgIcon('numeros',cor)+'</span><h2>Detetive do Enunciado</h2></div>';
+  html += barraProgresso(state.passo, state.ordem.length, cor);
+  html += '<div class="pergunta"><p class="enunciado">'+item.texto+'</p><p style="color:#6b7690;margin-top:10px">Qual conta resolve isso?</p></div>';
+  html += '<div class="opcoes">';
+  ['+','−','×','÷'].forEach(function(op){
+    let cls='opcao-btn';
+    if(state.resposta){
+      if(op===item.certa) cls+=' certa';
+      else if(op===state.resposta && op!==item.certa) cls+=' errada';
+    }
+    html += '<button class="'+cls+'" style="--cor:'+cor+'" '+(state.resposta?'disabled':'')+' onclick="responderEnunciado(\''+op+'\')">'+op+'</button>';
+  });
+  html += '</div>';
+  if(state.resposta){
+    const ok = state.resposta===item.certa;
+    html += '<div class="feedback '+(ok?'ok':'nok')+'"><span class="emoji">'+(ok?'🎉':'🤔')+'</span><span>'+(ok?'Isso mesmo!':'A conta certa era "'+item.certa+'". Vamos com calma no próximo enunciado.')+'</span></div>';
+    html += '<button class="continuar" onclick="proximoEnunciado()">Próxima →</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function responderEnunciado(op){
+  if(state.resposta) return;
+  state.resposta = op;
+  if(op===state.ordem[state.passo].certa) state.acertos++;
+  render();
+}
+function proximoEnunciado(){
+  state.passo++; state.resposta=null; render();
+}
+
+/* ---------- tela final compartilhada ---------- */
+
+function telaFinalConteudo(acertos,total,cor,onJogarDeNovoJs){
+  return '<div class="final">'+svgOwl(90)
+    + '<h2 style="margin-top:10px">Muito bem, Ana!</h2>'
+    + '<div class="estrelas">'+estrelasPorAcerto(acertos,total)+'</div>'
+    + '<p style="color:#6b7690">Você acertou '+acertos+' de '+total+'.</p>'
+    + '<div class="acoes-final"><button class="continuar" style="--cor:'+cor+'" onclick="'+onJogarDeNovoJs+'">Jogar de novo</button>'
+    + '<button class="btn-secundario" onclick="irParaMenu()">Voltar ao mapa</button></div></div>';
+}
+
+function telaFinal(acertos,total,cor,onJogarDeNovoFn){
+  window.__jogarDeNovo = onJogarDeNovoFn;
+  return '<div class="tela-jogo card">'+botaoVoltar()+telaFinalConteudo(acertos,total,cor,'window.__jogarDeNovo()')+'</div>';
+}
+
+/* ===================== início ===================== */
+render();
+</script>
+</body>
+</html>
